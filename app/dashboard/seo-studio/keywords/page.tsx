@@ -452,7 +452,7 @@ export default function KeywordResearchPage() {
                 <Loader2 className="h-10 w-10 animate-spin text-primary" />
                 <p className="mt-4 text-sm font-medium">Searching for keyword ideas...</p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Analyzing search volume, competition, and trends for "{keyword}"
+                  Analyzing search volume, competition, and trends for &quot;{keyword}&quot;
                 </p>
               </div>
             </Card>

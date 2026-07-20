@@ -526,7 +526,7 @@ function ContentPageInner() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Move to Trash?</AlertDialogTitle>
-            <AlertDialogDescription>"{deleteTarget?.title}" will be moved to Trash. You can restore it later.</AlertDialogDescription>
+            <AlertDialogDescription>&quot;{deleteTarget?.title}&quot; will be moved to Trash. You can restore it later.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
@@ -540,7 +540,7 @@ function ContentPageInner() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Archive Content?</AlertDialogTitle>
-            <AlertDialogDescription>"{archiveTarget?.title}" will be archived and hidden from active views.</AlertDialogDescription>
+            <AlertDialogDescription>&quot;{archiveTarget?.title}&quot; will be archived and hidden from active views.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>

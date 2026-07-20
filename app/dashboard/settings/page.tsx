@@ -660,7 +660,7 @@ export default function SettingsPage() {
           {generatedKey ? (
             <div className="space-y-4 py-2">
               <div className="rounded-lg bg-warning/10 p-3">
-                <p className="text-xs text-warning">Copy your API key now. You won't be able to see it again.</p>
+                <p className="text-xs text-warning">Copy your API key now. You won&apos;t be able to see it again.</p>
               </div>
               <div className="flex items-center gap-2">
                 <code className="flex-1 rounded-lg glass px-3 py-2 text-xs font-mono break-all">{generatedKey}</code>

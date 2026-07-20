@@ -245,7 +245,7 @@ export default function KeywordResearchPage() {
           <div className="flex items-center justify-between">
             <p className="text-sm text-muted-foreground">
               {sortedSuggestions.length} keyword suggestions for{' '}
-              <span className="font-medium text-foreground">"{activeKeyword}"</span>
+              <span className="font-medium text-foreground">&quot;{activeKeyword}&quot;</span>
             </p>
             <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortKey)}>
               <SelectTrigger className="w-44">

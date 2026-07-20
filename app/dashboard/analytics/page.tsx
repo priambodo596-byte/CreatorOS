@@ -514,7 +514,7 @@ export default function AnalyticsPage() {
               ) : (
                 <Card className="glass p-5">
                   <div className="flex h-[200px] items-center justify-center text-sm text-muted-foreground">
-                    No videos synced yet. Click "Sync Now" to fetch all videos.
+                    No videos synced yet. Click &quot;Sync Now&quot; to fetch all videos.
                   </div>
                 </Card>
               )}
@@ -631,7 +631,7 @@ export default function AnalyticsPage() {
               ) : (
                 <Card className="glass p-5">
                   <div className="flex h-[200px] items-center justify-center text-sm text-muted-foreground">
-                    No playlists synced yet. Click "Sync Now" to fetch all playlists.
+                    No playlists synced yet. Click &quot;Sync Now&quot; to fetch all playlists.
                   </div>
                 </Card>
               )}

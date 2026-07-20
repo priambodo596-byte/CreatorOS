@@ -1088,7 +1088,7 @@ export default function TrendingVideosPage() {
       {filtered.length > 0 && !hasMore && (
         <div className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">
           <Sparkles className="h-4 w-4" />
-          You've reached the end of trending results
+          You&apos;ve reached the end of trending results
         </div>
       )}
     </div>

@@ -5,6 +5,10 @@ const nextConfig = {
   },
   images: { unoptimized: true },
   swcMinify: false,
+  experimental: {
+    workerThreads: false,
+    cpus: 1,
+  },
 };
 
 module.exports = nextConfig;

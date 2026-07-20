@@ -188,7 +188,7 @@ export const NAV_SECTIONS: NavSection[] = [
     title: 'Automation',
     items: [
       { label: 'Workflow Builder', icon: Zap, href: '/dashboard/automation' },
-      { label: 'AI Agents', icon: Bot, href: '/dashboard/automation/agents' },
+      { label: 'AI Agents', icon: Bot, href: '/dashboard/automation/agent' },
       { label: 'Scheduled Jobs', icon: Timer, href: '/dashboard/automation/jobs' },
       { label: 'Integrations', icon: Plug, href: '/dashboard/automation/integrations' },
       { label: 'Webhooks', icon: WebhookIcon, href: '/dashboard/automation/webhooks', badge: 'New' },
