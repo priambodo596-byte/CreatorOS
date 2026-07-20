@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { motion } from "framer-motion";
 import {
   Flame,
   Eye,
@@ -15,17 +15,17 @@ import {
   RefreshCw,
   Globe,
   Play,
-} from 'lucide-react';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+} from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   PageHeader,
   EmptyState,
@@ -35,38 +35,226 @@ import {
   SearchInput,
   formatNumber,
   parseDuration,
-} from '@/components/dashboard/shared';
+} from "@/components/dashboard/shared";
 import {
   fetchTrendingVideos,
   YOUTUBE_CATEGORIES,
   type TrendingVideo,
-} from '@/lib/youtube-research';
+} from "@/lib/youtube-research";
 
-type SortKey = 'viralScore' | 'viewCount' | 'likeCount' | 'commentCount' | 'viewsPerDay';
+type SortKey =
+  | "viralScore"
+  | "viewCount"
+  | "likeCount"
+  | "commentCount"
+  | "viewsPerDay";
 
 const REGIONS = [
-  { code: 'US', label: 'United States' },
-  { code: 'GB', label: 'United Kingdom' },
-  { code: 'CA', label: 'Canada' },
-  { code: 'AU', label: 'Australia' },
-  { code: 'DE', label: 'Germany' },
-  { code: 'FR', label: 'France' },
-  { code: 'JP', label: 'Japan' },
-  { code: 'IN', label: 'India' },
-  { code: 'BR', label: 'Brazil' },
-  { code: 'KR', label: 'South Korea' },
-  { code: 'MX', label: 'Mexico' },
-  { code: 'ES', label: 'Spain' },
+  { code: "AF", label: "Afghanistan" },
+  { code: "AL", label: "Albania" },
+  { code: "DZ", label: "Algeria" },
+  { code: "AD", label: "Andorra" },
+  { code: "AO", label: "Angola" },
+  { code: "AG", label: "Antigua and Barbuda" },
+  { code: "AR", label: "Argentina" },
+  { code: "AM", label: "Armenia" },
+  { code: "AU", label: "Australia" },
+  { code: "AT", label: "Austria" },
+  { code: "AZ", label: "Azerbaijan" },
+  { code: "BS", label: "Bahamas" },
+  { code: "BH", label: "Bahrain" },
+  { code: "BD", label: "Bangladesh" },
+  { code: "BB", label: "Barbados" },
+  { code: "BY", label: "Belarus" },
+  { code: "BE", label: "Belgium" },
+  { code: "BZ", label: "Belize" },
+  { code: "BJ", label: "Benin" },
+  { code: "BT", label: "Bhutan" },
+  { code: "BO", label: "Bolivia" },
+  { code: "BA", label: "Bosnia and Herzegovina" },
+  { code: "BW", label: "Botswana" },
+  { code: "BR", label: "Brazil" },
+  { code: "BN", label: "Brunei" },
+  { code: "BG", label: "Bulgaria" },
+  { code: "BF", label: "Burkina Faso" },
+  { code: "BI", label: "Burundi" },
+  { code: "KH", label: "Cambodia" },
+  { code: "CM", label: "Cameroon" },
+  { code: "CA", label: "Canada" },
+  { code: "CV", label: "Cape Verde" },
+  { code: "CF", label: "Central African Republic" },
+  { code: "TD", label: "Chad" },
+  { code: "CL", label: "Chile" },
+  { code: "CN", label: "China" },
+  { code: "CO", label: "Colombia" },
+  { code: "KM", label: "Comoros" },
+  { code: "CG", label: "Congo" },
+  { code: "CD", label: "Congo (Democratic Republic)" },
+  { code: "CR", label: "Costa Rica" },
+  { code: "HR", label: "Croatia" },
+  { code: "CU", label: "Cuba" },
+  { code: "CY", label: "Cyprus" },
+  { code: "CZ", label: "Czechia" },
+  { code: "DK", label: "Denmark" },
+  { code: "DJ", label: "Djibouti" },
+  { code: "DM", label: "Dominica" },
+  { code: "DO", label: "Dominican Republic" },
+  { code: "EC", label: "Ecuador" },
+  { code: "EG", label: "Egypt" },
+  { code: "SV", label: "El Salvador" },
+  { code: "GQ", label: "Equatorial Guinea" },
+  { code: "ER", label: "Eritrea" },
+  { code: "EE", label: "Estonia" },
+  { code: "SZ", label: "Eswatini" },
+  { code: "ET", label: "Ethiopia" },
+  { code: "FJ", label: "Fiji" },
+  { code: "FI", label: "Finland" },
+  { code: "FR", label: "France" },
+  { code: "GA", label: "Gabon" },
+  { code: "GM", label: "Gambia" },
+  { code: "GE", label: "Georgia" },
+  { code: "DE", label: "Germany" },
+  { code: "GH", label: "Ghana" },
+  { code: "GR", label: "Greece" },
+  { code: "GD", label: "Grenada" },
+  { code: "GT", label: "Guatemala" },
+  { code: "GN", label: "Guinea" },
+  { code: "GW", label: "Guinea-Bissau" },
+  { code: "GY", label: "Guyana" },
+  { code: "HT", label: "Haiti" },
+  { code: "HN", label: "Honduras" },
+  { code: "HU", label: "Hungary" },
+  { code: "IS", label: "Iceland" },
+  { code: "IN", label: "India" },
+  { code: "ID", label: "Indonesia" },
+  { code: "IR", label: "Iran" },
+  { code: "IQ", label: "Iraq" },
+  { code: "IE", label: "Ireland" },
+  { code: "IL", label: "Israel" },
+  { code: "IT", label: "Italy" },
+  { code: "CI", label: "Ivory Coast" },
+  { code: "JM", label: "Jamaica" },
+  { code: "JP", label: "Japan" },
+  { code: "JO", label: "Jordan" },
+  { code: "KZ", label: "Kazakhstan" },
+  { code: "KE", label: "Kenya" },
+  { code: "KI", label: "Kiribati" },
+  { code: "KP", label: "North Korea" },
+  { code: "KR", label: "South Korea" },
+  { code: "KW", label: "Kuwait" },
+  { code: "KG", label: "Kyrgyzstan" },
+  { code: "LA", label: "Laos" },
+  { code: "LV", label: "Latvia" },
+  { code: "LB", label: "Lebanon" },
+  { code: "LS", label: "Lesotho" },
+  { code: "LR", label: "Liberia" },
+  { code: "LY", label: "Libya" },
+  { code: "LI", label: "Liechtenstein" },
+  { code: "LT", label: "Lithuania" },
+  { code: "LU", label: "Luxembourg" },
+  { code: "MG", label: "Madagascar" },
+  { code: "MW", label: "Malawi" },
+  { code: "MY", label: "Malaysia" },
+  { code: "MV", label: "Maldives" },
+  { code: "ML", label: "Mali" },
+  { code: "MT", label: "Malta" },
+  { code: "MH", label: "Marshall Islands" },
+  { code: "MR", label: "Mauritania" },
+  { code: "MU", label: "Mauritius" },
+  { code: "MX", label: "Mexico" },
+  { code: "FM", label: "Micronesia" },
+  { code: "MD", label: "Moldova" },
+  { code: "MC", label: "Monaco" },
+  { code: "MN", label: "Mongolia" },
+  { code: "ME", label: "Montenegro" },
+  { code: "MA", label: "Morocco" },
+  { code: "MZ", label: "Mozambique" },
+  { code: "MM", label: "Myanmar" },
+  { code: "NA", label: "Namibia" },
+  { code: "NR", label: "Nauru" },
+  { code: "NP", label: "Nepal" },
+  { code: "NL", label: "Netherlands" },
+  { code: "NZ", label: "New Zealand" },
+  { code: "NI", label: "Nicaragua" },
+  { code: "NE", label: "Niger" },
+  { code: "NG", label: "Nigeria" },
+  { code: "MK", label: "North Macedonia" },
+  { code: "NO", label: "Norway" },
+  { code: "OM", label: "Oman" },
+  { code: "PK", label: "Pakistan" },
+  { code: "PW", label: "Palau" },
+  { code: "PS", label: "Palestine" },
+  { code: "PA", label: "Panama" },
+  { code: "PG", label: "Papua New Guinea" },
+  { code: "PY", label: "Paraguay" },
+  { code: "PE", label: "Peru" },
+  { code: "PH", label: "Philippines" },
+  { code: "PL", label: "Poland" },
+  { code: "PT", label: "Portugal" },
+  { code: "QA", label: "Qatar" },
+  { code: "RO", label: "Romania" },
+  { code: "RU", label: "Russia" },
+  { code: "RW", label: "Rwanda" },
+  { code: "KN", label: "Saint Kitts and Nevis" },
+  { code: "LC", label: "Saint Lucia" },
+  { code: "VC", label: "Saint Vincent and the Grenadines" },
+  { code: "WS", label: "Samoa" },
+  { code: "SM", label: "San Marino" },
+  { code: "ST", label: "Sao Tome and Principe" },
+  { code: "SA", label: "Saudi Arabia" },
+  { code: "SN", label: "Senegal" },
+  { code: "RS", label: "Serbia" },
+  { code: "SC", label: "Seychelles" },
+  { code: "SL", label: "Sierra Leone" },
+  { code: "SG", label: "Singapore" },
+  { code: "SK", label: "Slovakia" },
+  { code: "SI", label: "Slovenia" },
+  { code: "SB", label: "Solomon Islands" },
+  { code: "SO", label: "Somalia" },
+  { code: "ZA", label: "South Africa" },
+  { code: "SS", label: "South Sudan" },
+  { code: "ES", label: "Spain" },
+  { code: "LK", label: "Sri Lanka" },
+  { code: "SD", label: "Sudan" },
+  { code: "SR", label: "Suriname" },
+  { code: "SE", label: "Sweden" },
+  { code: "CH", label: "Switzerland" },
+  { code: "SY", label: "Syria" },
+  { code: "TJ", label: "Tajikistan" },
+  { code: "TZ", label: "Tanzania" },
+  { code: "TH", label: "Thailand" },
+  { code: "TL", label: "Timor-Leste" },
+  { code: "TG", label: "Togo" },
+  { code: "TO", label: "Tonga" },
+  { code: "TT", label: "Trinidad and Tobago" },
+  { code: "TN", label: "Tunisia" },
+  { code: "TR", label: "Turkey" },
+  { code: "TM", label: "Turkmenistan" },
+  { code: "TV", label: "Tuvalu" },
+  { code: "UG", label: "Uganda" },
+  { code: "UA", label: "Ukraine" },
+  { code: "AE", label: "United Arab Emirates" },
+  { code: "GB", label: "United Kingdom" },
+  { code: "US", label: "United States" },
+  { code: "UY", label: "Uruguay" },
+  { code: "UZ", label: "Uzbekistan" },
+  { code: "VU", label: "Vanuatu" },
+  { code: "VA", label: "Vatican City" },
+  { code: "VE", label: "Venezuela" },
+  { code: "VN", label: "Vietnam" },
+  { code: "YE", label: "Yemen" },
+  { code: "ZM", label: "Zambia" },
+  { code: "ZW", label: "Zimbabwe" },
 ];
 
 export default function TrendingTopicsPage() {
   const [videos, setVideos] = useState<TrendingVideo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [search, setSearch] = useState('');
-  const [region, setRegion] = useState('US');
-  const [category, setCategory] = useState('0');
-  const [sortBy, setSortBy] = useState<SortKey>('viralScore');
+  const [search, setSearch] = useState("");
+  const [region, setRegion] = useState("US");
+  const [category, setCategory] = useState("0");
+  const [sortBy, setSortBy] = useState<SortKey>("viralScore");
   const [refreshKey, setRefreshKey] = useState(0);
 
   const refresh = useCallback(() => setRefreshKey((k) => k + 1), []);
@@ -85,7 +273,11 @@ export default function TrendingTopicsPage() {
         }
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : 'Failed to load trending videos');
+          setError(
+            err instanceof Error
+              ? err.message
+              : "Failed to load trending videos"
+          );
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -93,7 +285,9 @@ export default function TrendingTopicsPage() {
     }
 
     load();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [region, category, refreshKey]);
 
   // Filter + sort
@@ -107,19 +301,24 @@ export default function TrendingTopicsPage() {
         (v) =>
           v.title.toLowerCase().includes(q) ||
           v.channelTitle.toLowerCase().includes(q) ||
-          v.category.toLowerCase().includes(q),
+          v.category.toLowerCase().includes(q)
       );
     }
 
     // Sort
     result.sort((a, b) => {
       switch (sortBy) {
-        case 'viewCount': return b.viewCount - a.viewCount;
-        case 'likeCount': return b.likeCount - a.likeCount;
-        case 'commentCount': return b.commentCount - a.commentCount;
-        case 'viewsPerDay': return b.viewsPerDay - a.viewsPerDay;
-        case 'viralScore':
-        default: return b.viralScore - a.viralScore;
+        case "viewCount":
+          return b.viewCount - a.viewCount;
+        case "likeCount":
+          return b.likeCount - a.likeCount;
+        case "commentCount":
+          return b.commentCount - a.commentCount;
+        case "viewsPerDay":
+          return b.viewsPerDay - a.viewsPerDay;
+        case "viralScore":
+        default:
+          return b.viralScore - a.viralScore;
       }
     });
 
@@ -143,7 +342,9 @@ export default function TrendingTopicsPage() {
             onClick={refresh}
             disabled={loading}
           >
-            <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            <RefreshCw
+              className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`}
+            />
             Refresh
           </Button>
         }
@@ -206,9 +407,7 @@ export default function TrendingTopicsPage() {
         </>
       )}
 
-      {!loading && error && (
-        <ErrorState message={error} onRetry={refresh} />
-      )}
+      {!loading && error && <ErrorState message={error} onRetry={refresh} />}
 
       {!loading && !error && filteredVideos.length === 0 && (
         <EmptyState
@@ -234,7 +433,7 @@ export default function TrendingTopicsPage() {
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Flame className="h-4 w-4 text-warning" />
             <span>
-              {filteredVideos.length} trending videos in{' '}
+              {filteredVideos.length} trending videos in{" "}
               {REGIONS.find((r) => r.code === region)?.label || region}
             </span>
           </div>
@@ -300,15 +499,21 @@ export default function TrendingTopicsPage() {
                     <div className="grid grid-cols-3 gap-2 text-xs">
                       <div className="flex flex-col items-center gap-1 rounded-lg bg-muted/30 p-2">
                         <Eye className="h-3.5 w-3.5 text-primary" />
-                        <span className="font-medium">{formatNumber(video.viewCount)}</span>
+                        <span className="font-medium">
+                          {formatNumber(video.viewCount)}
+                        </span>
                       </div>
                       <div className="flex flex-col items-center gap-1 rounded-lg bg-muted/30 p-2">
                         <ThumbsUp className="h-3.5 w-3.5 text-success" />
-                        <span className="font-medium">{formatNumber(video.likeCount)}</span>
+                        <span className="font-medium">
+                          {formatNumber(video.likeCount)}
+                        </span>
                       </div>
                       <div className="flex flex-col items-center gap-1 rounded-lg bg-muted/30 p-2">
                         <MessageCircle className="h-3.5 w-3.5 text-accent" />
-                        <span className="font-medium">{formatNumber(video.commentCount)}</span>
+                        <span className="font-medium">
+                          {formatNumber(video.commentCount)}
+                        </span>
                       </div>
                     </div>
 
@@ -316,10 +521,13 @@ export default function TrendingTopicsPage() {
                     <div className="mt-3 flex items-center justify-between text-xs">
                       <span className="flex items-center gap-1 text-muted-foreground">
                         <Clock className="h-3 w-3" />
-                        {new Date(video.publishedAt).toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                        })}
+                        {new Date(video.publishedAt).toLocaleDateString(
+                          "en-US",
+                          {
+                            month: "short",
+                            day: "numeric",
+                          }
+                        )}
                       </span>
                       <span className="flex items-center gap-1 font-medium text-success">
                         <ArrowUpRight className="h-3 w-3" />
@@ -330,13 +538,22 @@ export default function TrendingTopicsPage() {
                     {/* Engagement bar */}
                     <div className="mt-3">
                       <div className="mb-1 flex items-center justify-between text-xs">
-                        <span className="text-muted-foreground">Engagement</span>
-                        <span className="font-medium">{(video.engagementRate ?? 0).toFixed(2)}%</span>
+                        <span className="text-muted-foreground">
+                          Engagement
+                        </span>
+                        <span className="font-medium">
+                          {(video.engagementRate ?? 0).toFixed(2)}%
+                        </span>
                       </div>
                       <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted/40">
                         <div
                           className="h-full rounded-full bg-gradient-to-r from-primary to-accent"
-                          style={{ width: `${Math.min(100, (video.engagementRate ?? 0) * 20)}%` }}
+                          style={{
+                            width: `${Math.min(
+                              100,
+                              (video.engagementRate ?? 0) * 20
+                            )}%`,
+                          }}
                         />
                       </div>
                     </div>
