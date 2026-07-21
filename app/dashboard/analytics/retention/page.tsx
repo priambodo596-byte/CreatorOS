@@ -144,7 +144,7 @@ export default function RetentionAnalyticsPage() {
 
   const loading = sync.loading;
   const error = sync.error;
-  const analytics = sync.analytics ?? [];
+  const analytics = useMemo(() => sync.analytics ?? [], [sync.analytics]);
 
   // -------------------------------------------------------------------------
   // Compute retention data from real analytics rows

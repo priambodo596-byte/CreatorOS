@@ -133,7 +133,7 @@ export default function RevenueAnalyticsPage() {
 
   const loading = sync.loading;
   const error = sync.error;
-  const analytics = sync.analytics ?? [];
+  const analytics = useMemo(() => sync.analytics ?? [], [sync.analytics]);
 
   // -------------------------------------------------------------------------
   // Compute all revenue data from real analytics rows

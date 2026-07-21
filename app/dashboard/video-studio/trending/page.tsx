@@ -22,7 +22,7 @@ import {
   Play,
   Scissors,
   PenLine,
-  Image,
+  Image as ImageIcon,
   BarChart3,
   Zap,
   Users,
@@ -1255,7 +1255,7 @@ function VideoCardGrid({
               className="h-7 gap-1 px-2 text-xs"
               onClick={() => window.open(`/dashboard/thumbnail-studio`, '_self')}
             >
-              <Image className="h-3 w-3" /> Thumb
+              <ImageIcon className="h-3 w-3" /> Thumb
             </Button>
             <Button
               variant="outline"
@@ -1443,7 +1443,7 @@ function VideoCardList({
                 className="h-7 gap-1 px-2 text-xs"
                 onClick={() => window.open(`/dashboard/thumbnail-studio`, '_self')}
               >
-                <Image className="h-3 w-3" /> Thumb
+                <ImageIcon className="h-3 w-3" /> Thumb
               </Button>
               <Button
                 variant="outline"
