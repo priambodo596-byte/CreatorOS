@@ -70,29 +70,7 @@ export default function AIStudioPage() {
     }
   }, [searchParams]);
 
-  // Keyboard shortcuts
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        setShowCommandPalette((prev) => !prev);
-      }
-      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
-        e.preventDefault();
-        handleSave();
-      }
-      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'L') {
-        e.preventDefault();
-        setLeftSidebarOpen((prev) => !prev);
-      }
-      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'R') {
-        e.preventDefault();
-        setRightSidebarOpen((prev) => !prev);
-      }
-    };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, [content, title, mode]);
+  // Keyboard shortcuts (registered after handleSave is defined, see below)
 
   const handleNewConversation = useCallback(async () => {
     const { data, error } = await supabase
@@ -253,6 +231,30 @@ export default function AIStudioPage() {
       toast({ title: 'Document saved' });
     }
   }, [content, title, mode, model, language, tone, audience, toast]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setShowCommandPalette((prev) => !prev);
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+        e.preventDefault();
+        handleSave();
+      }
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'L') {
+        e.preventDefault();
+        setLeftSidebarOpen((prev) => !prev);
+      }
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'R') {
+        e.preventDefault();
+        setRightSidebarOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [handleSave]);
 
   const handleSelectPrompt = useCallback((promptContent: string) => {
     setContent(promptContent);

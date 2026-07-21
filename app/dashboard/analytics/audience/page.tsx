@@ -123,9 +123,9 @@ export default function AudienceAnalyticsPage() {
 
   const loading = yt.loading;
   const error = yt.error;
-  const topCountries = yt.topCountries ?? [];
-  const trafficSources = yt.trafficSources ?? [];
-  const analytics = yt.analytics ?? [];
+  const topCountries = useMemo(() => yt.topCountries ?? [], [yt.topCountries]);
+  const trafficSources = useMemo(() => yt.trafficSources ?? [], [yt.trafficSources]);
+  const analytics = useMemo(() => yt.analytics ?? [], [yt.analytics]);
 
   // -------------------------------------------------------------------------
   // Compute aggregate stats from real data
