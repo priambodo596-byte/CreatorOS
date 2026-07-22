@@ -29,6 +29,8 @@ export interface ContentItem {
   deleted_at: string | null;
   created_at: string;
   updated_at: string;
+  /** JSONB blob for wizard per-step working data (research, script, storyboard, etc.) */
+  metadata?: Record<string, unknown>;
 }
 
 export interface ContentCategory {
@@ -121,6 +123,20 @@ export async function getContentById(id: string): Promise<ContentItem | null> {
   const { data, error } = await supabase.from('content_items').select('*').eq('id', id).maybeSingle();
   if (error) throw error;
   return data as ContentItem | null;
+}
+
+/** Find in-progress wizard projects (draft status with wizard_step in metadata) */
+export async function findIncompleteWizardProjects(): Promise<ContentItem[]> {
+  const { data, error } = await supabase
+    .from('content_items')
+    .select('*')
+    .is('deleted_at', null)
+    .eq('status', 'draft')
+    .not('metadata', 'is', null)
+    .order('updated_at', { ascending: false })
+    .limit(20);
+  if (error) throw error;
+  return (data || []).filter((item) => item.metadata && typeof item.metadata === 'object' && 'wizard_step' in item.metadata) as ContentItem[];
 }
 
 export async function getContentActivities(contentId: string): Promise<ContentActivity[]> {

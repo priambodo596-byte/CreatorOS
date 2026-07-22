@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { useToast } from './use-toast';
 import { supabase } from '@/lib/supabase-client';
 import {
-  createContent, updateContent,
+  createContent, updateContent, getContentById,
   type ContentStatus, type ContentVisibility,
 } from '@/lib/content';
 
@@ -50,6 +50,7 @@ export const STEP_LABELS: Record<WizardStep, string> = {
 export interface ProjectData {
   name: string;
   channel_name: string;
+  channel_id: string;
   content_type: string;
   language: string;
   category_id: string;
@@ -159,6 +160,7 @@ export interface WizardState {
 const DEFAULT_PROJECT: ProjectData = {
   name: '',
   channel_name: '',
+  channel_id: '',
   content_type: 'video',
   language: 'en',
   category_id: '',
@@ -279,6 +281,89 @@ export function useNewVideoWizard(initialOpen = true, onClose?: () => void) {
     return WIZARD_STEPS[stateRef.current.currentStep] || 'project';
   }, []);
 
+  // ─── Load from DB ─────────────────────────────────────────────────────────
+
+  const loadFromDatabase = useCallback(async (contentId: string): Promise<boolean> => {
+    try {
+      const item = await getContentById(contentId);
+      if (!item) {
+        toast({ title: 'Project not found', variant: 'destructive' });
+        return false;
+      }
+
+      const meta = item.metadata || {};
+      const completedStepsArr: number[] = Array.isArray(meta.wizard_completed_steps)
+        ? meta.wizard_completed_steps
+        : [];
+
+      setState({
+        ...INITIAL_STATE,
+        contentId: item.id,
+        currentStep: typeof meta.wizard_step === 'number' ? meta.wizard_step : 0,
+        completedSteps: new Set(completedStepsArr),
+        project: {
+          name: item.title || '',
+          channel_name: item.channel_name || '',
+          channel_id: item.channel_id || '',
+          content_type: item.content_type || 'video',
+          language: (meta.language as string) || 'en',
+          category_id: item.category_id || '',
+          target_audience: (meta.target_audience as string) || '',
+          status: (item.status as ContentStatus) || 'draft',
+        },
+        research: (meta.research as ResearchData) || { ...DEFAULT_RESEARCH },
+        script: (meta.script as ScriptData) || { ...DEFAULT_SCRIPT },
+        storyboard: (meta.storyboard as StoryboardData) || { ...DEFAULT_STORYBOARD },
+        video: {
+          ...DEFAULT_VIDEO,
+          video_url: item.video_url || null,
+          render_status: (meta.video_render_status as VideoData['render_status']) || 'pending',
+          video_duration: (meta.video_duration as string) || '',
+          has_subtitles: (meta.has_subtitles as boolean) || false,
+          has_voiceover: (meta.has_voiceover as boolean) || false,
+        },
+        thumbnail: {
+          ...DEFAULT_THUMBNAIL,
+          thumbnail_url: item.thumbnail_url || null,
+          thumbnail_score: item.thumbnail_score || 0,
+        },
+        seo: {
+          ...DEFAULT_SEO,
+          title: item.title || '',
+          description: item.description || '',
+          tags: item.tags || [],
+          seo_score: item.seo_score || 0,
+        },
+        publish: {
+          ...DEFAULT_PUBLISH,
+          scheduled_at: item.scheduled_at || '',
+          visibility: (item.visibility as ContentVisibility) || 'private',
+          category_id: item.category_id || '',
+          license: (meta.publish_license as string) || 'youtube',
+        },
+      });
+
+      // Also sync to localStorage
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+          ...INITIAL_STATE,
+          contentId: item.id,
+          currentStep: typeof meta.wizard_step === 'number' ? meta.wizard_step : 0,
+          completedSteps: completedStepsArr,
+        }));
+      } catch { /* ignore */ }
+
+      return true;
+    } catch (err) {
+      toast({
+        title: 'Failed to load project',
+        description: err instanceof Error ? err.message : 'Could not load from database',
+        variant: 'destructive',
+      });
+      return false;
+    }
+  }, [toast]);
+
   // ─── DB Save ──────────────────────────────────────────────────────────────
 
   const saveToDatabase = useCallback(async (): Promise<boolean> => {
@@ -293,6 +378,7 @@ export function useNewVideoWizard(initialOpen = true, onClose?: () => void) {
         content_type: s.project.content_type,
         status: s.project.status,
         channel_name: s.project.channel_name || null,
+        channel_id: s.project.channel_id || null,
         category_id: s.project.category_id || null,
         description: s.seo.description || null,
         tags: s.seo.tags.length > 0 ? s.seo.tags : undefined,
@@ -502,7 +588,7 @@ export function useNewVideoWizard(initialOpen = true, onClose?: () => void) {
     goToStep, nextStep, prevStep,
     setProject, setResearch, setScript, setStoryboard,
     setVideo, setThumbnail, setSeo, setReview, setPublish,
-    saveToDatabase, uploadFile,
+    saveToDatabase, loadFromDatabase, uploadFile,
     isStepComplete: (index: number) => state.completedSteps.has(index),
     isStepCurrent: (index: number) => state.currentStep === index,
     totalSteps: WIZARD_STEPS.length,

@@ -360,6 +360,25 @@ function StepProject({
   onNext: () => void;
 }) {
   const canProceed = data.name.trim().length > 0;
+  const [connectedChannel, setConnectedChannel] = useState<{
+    id: string;
+    title: string;
+  } | null>(null);
+
+  useEffect(() => {
+    getConnection()
+      .then((conn) => {
+        if (conn) {
+          const channel = { id: conn.channel_id, title: conn.channel_title };
+          setConnectedChannel(channel);
+          // Auto-select the connected channel if none selected yet
+          if (!data.channel_id && !data.channel_name) {
+            onChange({ channel_id: channel.id, channel_name: channel.title });
+          }
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -383,8 +402,17 @@ function StepProject({
           <div>
             <Label>YouTube Channel</Label>
             <Select
-              value={data.channel_name}
-              onValueChange={(v) => onChange({ channel_name: v })}
+              value={data.channel_id}
+              onValueChange={(v) => {
+                const selected =
+                  connectedChannel && connectedChannel.id === v
+                    ? connectedChannel
+                    : null;
+                onChange({
+                  channel_id: v,
+                  channel_name: selected?.title || v,
+                });
+              }}
             >
               <SelectTrigger>
                 <SelectValue
@@ -392,8 +420,15 @@ function StepProject({
                 />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="main">Main Channel</SelectItem>
-                {!ytConnected && (
+                {connectedChannel ? (
+                  <SelectItem value={connectedChannel.id}>
+                    {connectedChannel.title}
+                  </SelectItem>
+                ) : ytConnected ? (
+                  <SelectItem value="loading" disabled>
+                    Loading channel...
+                  </SelectItem>
+                ) : (
                   <SelectItem value="disconnected" disabled>
                     Connect YouTube first
                   </SelectItem>
@@ -548,7 +583,9 @@ function StepResearch({
       setKeywordResults(result.suggestions.slice(0, 10));
     } catch (err) {
       setKeywordError(
-        err instanceof Error ? err.message : "Failed to fetch keyword suggestions"
+        err instanceof Error
+          ? err.message
+          : "Failed to fetch keyword suggestions"
       );
     } finally {
       setKeywordLoading(false);
@@ -602,7 +639,12 @@ function StepResearch({
         <div>
           <div className="flex items-center justify-between">
             <Label>Trending Topics</Label>
-            <Button variant="outline" size="sm" onClick={loadTrending} disabled={trendingLoading}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={loadTrending}
+              disabled={trendingLoading}
+            >
               {trendingLoading ? (
                 <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
               ) : (
@@ -619,9 +661,13 @@ function StepResearch({
                   <Loader2 className="h-5 w-5 animate-spin text-primary" />
                 </div>
               ) : trendingError ? (
-                <p className="py-3 text-center text-xs text-destructive">{trendingError}</p>
+                <p className="py-3 text-center text-xs text-destructive">
+                  {trendingError}
+                </p>
               ) : trending.length === 0 ? (
-                <p className="py-3 text-center text-xs text-muted-foreground">No trending videos found.</p>
+                <p className="py-3 text-center text-xs text-muted-foreground">
+                  No trending videos found.
+                </p>
               ) : (
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                   {trending.map((v) => {
@@ -630,20 +676,38 @@ function StepResearch({
                       <button
                         key={v.videoId}
                         onClick={() =>
-                          selected ? removeTopic(v.title) : onChange({ selected_topics: [...data.selected_topics, v.title] })
+                          selected
+                            ? removeTopic(v.title)
+                            : onChange({
+                                selected_topics: [
+                                  ...data.selected_topics,
+                                  v.title,
+                                ],
+                              })
                         }
                         className={cn(
                           "flex items-center gap-2 rounded-lg border p-2 text-left transition-colors",
-                          selected ? "border-primary bg-primary/10" : "border-border/50 hover:bg-muted/30"
+                          selected
+                            ? "border-primary bg-primary/10"
+                            : "border-border/50 hover:bg-muted/30"
                         )}
                       >
                         <div className="h-9 w-16 shrink-0 overflow-hidden rounded bg-muted">
-                          {v.thumbnail && <img src={v.thumbnail} alt="" className="h-full w-full object-cover" />}
+                          {v.thumbnail && (
+                            <img
+                              src={v.thumbnail}
+                              alt=""
+                              className="h-full w-full object-cover"
+                            />
+                          )}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-xs font-medium">{v.title}</p>
+                          <p className="truncate text-xs font-medium">
+                            {v.title}
+                          </p>
                           <p className="text-[10px] text-muted-foreground">
-                            {v.viewCount.toLocaleString()} views · viral {v.viralScore}
+                            {v.viewCount.toLocaleString()} views · viral{" "}
+                            {v.viralScore}
                           </p>
                         </div>
                       </button>
@@ -694,7 +758,12 @@ function StepResearch({
               placeholder="Seed keyword to research..."
               onKeyDown={(e) => e.key === "Enter" && searchKeywords()}
             />
-            <Button variant="outline" size="sm" onClick={searchKeywords} disabled={keywordLoading}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={searchKeywords}
+              disabled={keywordLoading}
+            >
               {keywordLoading ? (
                 <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
               ) : (
@@ -704,7 +773,9 @@ function StepResearch({
             </Button>
           </div>
 
-          {keywordError && <p className="mt-2 text-xs text-destructive">{keywordError}</p>}
+          {keywordError && (
+            <p className="mt-2 text-xs text-destructive">{keywordError}</p>
+          )}
 
           {keywordResults.length > 0 && (
             <div className="mt-2 flex flex-wrap gap-2">
@@ -716,14 +787,24 @@ function StepResearch({
                     onClick={() =>
                       selected
                         ? removeKeyword(k.keyword)
-                        : onChange({ selected_keywords: [...data.selected_keywords, k.keyword] })
+                        : onChange({
+                            selected_keywords: [
+                              ...data.selected_keywords,
+                              k.keyword,
+                            ],
+                          })
                     }
                     className={cn(
                       "rounded-full border px-2.5 py-1 text-xs transition-colors",
-                      selected ? "border-primary bg-primary/10 text-primary" : "border-border/50 hover:bg-muted/30"
+                      selected
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-border/50 hover:bg-muted/30"
                     )}
                   >
-                    {k.keyword} <span className="text-muted-foreground">· vol {k.searchVolume}</span>
+                    {k.keyword}{" "}
+                    <span className="text-muted-foreground">
+                      · vol {k.searchVolume}
+                    </span>
                   </button>
                 );
               })}
