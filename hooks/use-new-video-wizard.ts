@@ -262,6 +262,74 @@ export function useNewVideoWizard(initialOpen = true, onClose?: () => void) {
   const stateRef = useRef(state);
   stateRef.current = state;
 
+  // Load most recent draft from DB if no localStorage draft exists
+  useEffect(() => {
+    if (!initialOpen) return;
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) return;
+
+    (async () => {
+      try {
+        const { data, error } = await supabase
+          .from('content_items')
+          .select('*')
+          .eq('status', 'draft')
+          .order('updated_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (error || !data) return;
+
+        const meta = (data.metadata as Record<string, unknown> | null) ?? {};
+        setState((prev) => ({
+          ...prev,
+          contentId: data.id,
+          currentStep: typeof meta.wizard_step === 'number' ? meta.wizard_step : 0,
+          completedSteps: new Set(
+            Array.isArray(meta.wizard_completed_steps) ? meta.wizard_completed_steps : [],
+          ),
+          project: {
+            ...prev.project,
+            name: data.title ?? '',
+            channel_name: data.channel_name ?? '',
+            content_type: data.content_type ?? 'video',
+            language: typeof meta.language === 'string' ? meta.language : 'en',
+            category_id: data.category_id ?? '',
+            target_audience: typeof meta.target_audience === 'string' ? meta.target_audience : '',
+            status: (data.status as ContentStatus) ?? 'draft',
+          },
+          research: (meta.research as ResearchData) ?? prev.research,
+          script: (meta.script as ScriptData) ?? prev.script,
+          storyboard: (meta.storyboard as StoryboardData) ?? prev.storyboard,
+          video: {
+            ...prev.video,
+            video_url: data.video_url ?? null,
+            render_status: (meta.video_render_status as VideoData['render_status']) ?? 'pending',
+            video_duration: typeof meta.video_duration === 'string' ? meta.video_duration : '',
+            has_subtitles: !!meta.has_subtitles,
+            has_voiceover: !!meta.has_voiceover,
+          },
+          thumbnail: {
+            ...prev.thumbnail,
+            thumbnail_url: data.thumbnail_url ?? null,
+            thumbnail_score: data.thumbnail_score ?? 0,
+          },
+          seo: {
+            ...prev.seo,
+            description: data.description ?? '',
+            tags: Array.isArray(data.tags) ? data.tags : [],
+            seo_score: data.seo_score ?? 0,
+          },
+          publish: {
+            ...prev.publish,
+            visibility: (data.visibility as ContentVisibility) ?? 'private',
+            scheduled_at: data.scheduled_at ?? '',
+          },
+          lastSaved: data.updated_at ?? null,
+        }));
+      } catch { /* start fresh */ }
+    })();
+  }, [initialOpen]);
+
   const updateState = useCallback((updater: (prev: WizardState) => WizardState) => {
     setState((prev) => {
       const next = updater(prev);
@@ -324,6 +392,15 @@ export function useNewVideoWizard(initialOpen = true, onClose?: () => void) {
       } else {
         const created = await createContent(payload);
         setState((prev) => ({ ...prev, contentId: created.id }));
+
+        // Also create a projects record so it appears on the Projects page
+        await supabase.from('projects').insert({
+          name: s.project.name.trim(),
+          description: s.seo.description || null,
+          status: 'planning',
+          progress: 0,
+          thumbnail_url: s.thumbnail.thumbnail_url || null,
+        });
       }
 
       const now = new Date().toISOString();
