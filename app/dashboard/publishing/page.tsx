@@ -26,6 +26,8 @@ import {
   AlertCircle,
   RefreshCw,
   Inbox,
+  Youtube,
+  Download,
 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -63,6 +65,11 @@ interface UploadDraft {
   video_storage_path: string | null;
   video_name: string | null;
   video_size: number | null;
+  original_youtube_url: string | null;
+  download_status: string | null;
+  download_error: string | null;
+  storage_size: number | null;
+  storage_mime: string | null;
   visibility: 'public' | 'unlisted' | 'private';
   scheduled: boolean;
   scheduled_date: string;
@@ -92,6 +99,7 @@ export default function PublishingPage() {
   const [playlists, setPlaylists] = useState<{ id: string; title: string; item_count: number }[]>([]);
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const router = useRouter();
 
   const loadDrafts = useCallback(async () => {
@@ -116,7 +124,12 @@ export default function PublishingPage() {
         video_url: row.video_url,
         video_storage_path: row.video_storage_path ?? null,
         video_name: row.title,
-        video_size: null,
+        video_size: row.storage_size ?? null,
+        original_youtube_url: row.original_youtube_url ?? null,
+        download_status: row.download_status ?? null,
+        download_error: row.download_error ?? null,
+        storage_size: row.storage_size ?? null,
+        storage_mime: row.storage_mime ?? null,
         visibility: row.visibility || 'public',
         scheduled: row.scheduled || false,
         scheduled_date: row.scheduled_at ? row.scheduled_at.split('T')[0] : '',
@@ -243,6 +256,11 @@ export default function PublishingPage() {
       video_storage_path: filePath,
       video_name: file.name,
       video_size: file.size,
+      original_youtube_url: null,
+      download_status: 'none',
+      download_error: null,
+      storage_size: file.size,
+      storage_mime: file.type || 'video/mp4',
       visibility: 'public',
       scheduled: false,
       scheduled_date: '',
@@ -322,6 +340,51 @@ export default function PublishingPage() {
     }
   };
 
+  const handleDownloadFromYoutube = async () => {
+    if (!currentDraft) return;
+    setDownloading(true);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+      if (!accessToken) throw new Error('Not authenticated');
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/youtube-download`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({ draftId: currentDraft.id }),
+        },
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || `Download failed (${response.status})`);
+      }
+
+      toast({
+        title: result.cached ? 'Video already stored' : 'Download complete',
+        description: result.cached
+          ? 'Video file was already in Supabase Storage.'
+          : `Downloaded and uploaded to Storage (${(result.file_size / (1024 * 1024)).toFixed(1)} MB)`,
+      });
+
+      await loadDrafts();
+    } catch (err) {
+      toast({
+        title: 'Download failed',
+        description: err instanceof Error ? err.message : 'Unknown error',
+        variant: 'destructive',
+      });
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   const handlePublish = async () => {
     if (!currentDraft) return;
 
@@ -338,16 +401,18 @@ export default function PublishingPage() {
     if (currentDraft.video_url && isYouTubeUrl(currentDraft.video_url)) {
       toast({
         title: 'Cannot publish',
-        description: 'video_url contains a YouTube watch URL, not a video file. Upload the video file from the Upload Center first.',
+        description: 'video_url contains a YouTube watch URL, not a video file. Click "Download from YouTube" first to download the video to Storage.',
         variant: 'destructive',
       });
       return;
     }
 
-    if (!currentDraft.video_storage_path && !currentDraft.video_url) {
+    if (!currentDraft.video_storage_path) {
       toast({
         title: 'Cannot publish',
-        description: 'Video file belum diupload ke Supabase Storage. Upload a video file from the Upload Center first.',
+        description: currentDraft.original_youtube_url
+          ? 'Video file belum diupload ke Supabase Storage. Click "Download from YouTube" first to download the video.'
+          : 'Video file belum diupload ke Supabase Storage. Upload a video file first.',
         variant: 'destructive',
       });
       return;
@@ -875,10 +940,44 @@ export default function PublishingPage() {
                       </div>
                     ))}
                   </div>
+                  {currentDraft?.original_youtube_url && !currentDraft?.video_storage_path && (
+                    <div className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4">
+                      <div className="flex items-start gap-3">
+                        <Youtube className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-400" />
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-amber-200">Video file not in Storage yet</p>
+                          <p className="mt-1 text-xs text-amber-200/70">
+                            This draft came from a YouTube URL. Download the video file to Supabase Storage before publishing.
+                          </p>
+                          {currentDraft.download_status === 'failed' && currentDraft.download_error && (
+                            <p className="mt-2 text-xs text-red-400">Last error: {currentDraft.download_error}</p>
+                          )}
+                          <Button
+                            className="mt-3 w-full"
+                            variant="outline"
+                            onClick={handleDownloadFromYoutube}
+                            disabled={downloading}
+                          >
+                            {downloading ? (
+                              <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Downloading from YouTube...
+                              </>
+                            ) : (
+                              <>
+                                <Download className="mr-2 h-4 w-4" />
+                                Download from YouTube
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                   <Button
                     className="mt-6 w-full bg-gradient-to-r from-primary to-accent text-white"
                     onClick={handlePublish}
-                    disabled={publishing}
+                    disabled={publishing || !currentDraft?.video_storage_path}
                   >
                     {publishing ? (
                       <>

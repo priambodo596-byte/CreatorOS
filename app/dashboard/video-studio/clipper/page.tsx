@@ -959,6 +959,8 @@ export default function AIClipperPage() {
         });
       }
 
+      const sourceIsYouTube = clip.sourceVideoUrl ? isYouTubeUrl(clip.sourceVideoUrl) : false;
+
       const draftRow = {
         user_id: userId,
         clip_id: savedClip?.id ?? null,
@@ -968,7 +970,9 @@ export default function AIClipperPage() {
         hashtags: clip.hashtags,
         thumbnail_url: clip.thumbnailUrl,
         video_storage_path: videoStoragePath,
-        video_url: videoUrl,
+        video_url: sourceIsYouTube ? null : videoUrl,
+        original_youtube_url: sourceIsYouTube ? clip.sourceVideoUrl : null,
+        download_status: sourceIsYouTube && !videoStoragePath ? 'needed' : 'none',
         platform: clip.platform,
         visibility: 'public',
         status: 'draft',

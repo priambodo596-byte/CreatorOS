@@ -21,6 +21,8 @@ interface DraftRow {
   thumbnail_url: string | null;
   video_storage_path: string | null;
   video_url: string | null;
+  original_youtube_url: string | null;
+  download_status: string | null;
   platform: string | null;
   visibility: string | null;
   scheduled: boolean | null;
@@ -156,10 +158,15 @@ async function fetchVideoFile(supabase: ReturnType<typeof createClient>, draft: 
   if (!draft.video_storage_path) {
     if (draft.video_url && isYouTubeUrl(draft.video_url)) {
       throw new Error(
-        "video_url contains a YouTube watch URL, not a video file. The video must be uploaded to Supabase Storage before publishing. Download the video file first, then upload it from the Publishing Center.",
+        "video_url contains a YouTube watch URL, not a video file. Click 'Download from YouTube' first to download the video to Supabase Storage, then publish.",
       );
     }
-    throw new Error("Video file belum diupload ke Supabase Storage. Upload the video file from the Publishing Center before publishing.");
+    if (draft.original_youtube_url) {
+      throw new Error(
+        "Video file belum diupload ke Supabase Storage. Click 'Download from YouTube' first to download the video, then publish.",
+      );
+    }
+    throw new Error("Video file belum diupload ke Supabase Storage. Upload the video file from the Upload Center before publishing.");
   }
 
   const { data, error } = await supabase.storage
