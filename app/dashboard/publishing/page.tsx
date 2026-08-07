@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -101,6 +101,8 @@ export default function PublishingPage() {
   const [publishing, setPublishing] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const router = useRouter();
+  const currentDraftRef = useRef<UploadDraft | null>(null);
+  currentDraftRef.current = currentDraft;
 
   const loadDrafts = useCallback(async () => {
     setLoadingDrafts(true);
@@ -139,12 +141,12 @@ export default function PublishingPage() {
         updated_at: row.updated_at,
       }));
       setDrafts(mapped);
-      if (mapped.length > 0 && !currentDraft) {
+      if (mapped.length > 0 && !currentDraftRef.current) {
         setCurrentDraft(mapped[0]);
       }
     }
     setLoadingDrafts(false);
-  }, [currentDraft]);
+  }, []);
 
   const loadPlaylists = useCallback(async () => {
     const { data } = await supabase
